@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/runtime:6.0-focal AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
+WORKDIR /src
+COPY ["OpenCvSharp-Docker-Deployment/OpenCvSharp-Docker-Deployment.csproj", "OpenCvSharp-Docker-Deployment/"]
+RUN dotnet restore "OpenCvSharp-Docker-Deployment/OpenCvSharp-Docker-Deployment.csproj"
+COPY . .
+WORKDIR "/src/OpenCvSharp-Docker-Deployment"
+RUN dotnet build "OpenCvSharp-Docker-Deployment.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "OpenCvSharp-Docker-Deployment.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "OpenCvSharp-Docker-Deployment.dll"]
